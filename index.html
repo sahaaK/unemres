@@ -785,9 +785,14 @@
                     <td>${item.employment || 'N/A'}</td>
                     <td>${item.emigration || 'N/A'}</td>
                     <td>
-                        <button onclick="viewDetails('${item.id}')" class="text-purple-400 hover:text-purple-300">
-                            <i data-feather="eye" class="w-4 h-4"></i>
-                        </button>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="viewDetails('${item.id}')" class="text-purple-400 hover:text-purple-300" title="View details">
+                                <i data-feather="eye" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteResult('${item.id}')" class="text-red-400 hover:text-red-300" title="Delete result">
+                                <i data-feather="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -991,6 +996,35 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        // Delete a result by id
+        async function deleteResult(id) {
+            if (!id) return;
+            const confirmDelete = confirm('Are you sure you want to delete this result? This action cannot be undone.');
+            if (!confirmDelete) return;
+
+            try {
+                // Delete from Firestore
+                await db.collection('unemployment survey').doc(id).delete();
+
+                // Remove from local arrays
+                allData = allData.filter(item => item.id !== id);
+                filteredData = filteredData.filter(item => item.id !== id);
+
+                // Update UI
+                updateMetrics();
+                renderCharts();
+                // Ensure currentPage is valid
+                const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
+                if (currentPage > totalPages) currentPage = totalPages;
+                renderTable();
+
+                alert('Result deleted successfully.');
+            } catch (error) {
+                console.error('Error deleting result:', error);
+                alert('Failed to delete result. Check console for details.');
+            }
         }
 
         // Initialize
